@@ -186,6 +186,7 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         image = GetComponent<Image>();
         table = GetComponentInParent<CratftTableUI>();
         isHaveItem = false;
+        UpdateItemImage();
     }
 
     /// <summary>
@@ -211,15 +212,15 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
             }
         }
         //아이템이 없을을 때 아이템이미지를 내보냅니다.
-        //현재는 Magenta를 출력합니다.
+        // 현재는 Magenta를 출력합니다.
         else
         {
             image.sprite = null;
             Color tempColor = image.color;
-            tempColor.a = 0.5f;
-            tempColor.r = 1f;
+            tempColor.a = 0.0f;        // + 빌드시 투명으로 바꿉니다.
+            tempColor.r = 1.0f;
             tempColor.g = 0f;
-            tempColor.b = 1f;
+            tempColor.b = 1.0f;
             image.color = tempColor;
         }
 
