@@ -5,9 +5,5 @@
 [System.Serializable]
 public class String : Item
 {
-    public String(string name, string imageName)
-        : base(name, imageName)
-    {
-        this.itemNo = (int)ItemNo.STRING;
-    }
+    public String(string name) : base(name) { this.itemNo = (int)ItemNo.STRING; this.imageName = "String"; }
 }

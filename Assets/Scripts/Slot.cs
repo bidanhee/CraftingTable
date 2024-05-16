@@ -1,48 +1,65 @@
-using System.Collections;
 using System.Collections.Generic;
-using Unity.Collections.LowLevel.Unsafe;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
+/// <summary>
+/// 슬롯마다 부여되는 슬롯의 타입들입니다.
+/// </summary>
 enum SlotType { ERROR, QUICKSLOT, INVENTORY, CRAFT, MANUFACTURED};
-public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler
+
+/// <summary>
+/// 슬롯 클래스 입니다.
+/// </summary>
+public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
 {
-    public Image image;
-    public Item item = null;
-    public bool isHaveItem;
-    Vector3 startPosition;
-    public int type;
-    public int craftNum;
-    public bool isDrag;
-    public CratftTableUI table;
+    CratftTableUI table;    
+    public Item item = null;    //슬롯이 보유하고 있는 아이템입니다.
+    public Image image;     //아이템이 없으면 빈 이미지, 아이템이 있으면 아이템이미지가 들어갑니다.
+
+    public bool isHaveItem; //슬롯이 아이템을 보유하고 있는가?
+    Vector3 startPosition;  //드래그 시 이용하는 벡터입니다.
+    public int type;    // 슬롯마다 부여되는 슬롯의 타입입니다.
+    public int craftNum;    // 제작대 슬롯에만 부여되는 번호입니다. 제작대 슬롯이 아닐 시 0입니다.
+    public bool isDrag; //드래그 중인가?
+
 
     void Update()
     {
         RButtonDownOnDrag();
     }
+
+    /// <summary>
+    /// 드래그 중 우클릭때 불러지는 함수입니다.
+    /// 아이템을 하나씩 드롭 합니다.
+    /// </summary>
     void RButtonDownOnDrag()
     {
         if (Input.GetMouseButtonDown(1) && isDrag)
         {
+            // 마우스 위치에 있는 UI 요소를 가져옵니다.
             PointerEventData eventData = new PointerEventData(EventSystem.current);
             eventData.position = Input.mousePosition;
 
             List<RaycastResult> results = new List<RaycastResult>();
             EventSystem.current.RaycastAll(eventData, results);
 
+            // 마우스 위치에 다른 슬롯이 있는지 확인합니다.
             foreach (RaycastResult result in results)
             {
                 Slot otherSlot = result.gameObject.GetComponent<Slot>();
                 if (otherSlot != null && otherSlot != this)
                 {
+                    // 다른 슬롯에 아이템을 드롭합니다.
                     AddItem(otherSlot, this.item);
                 }
             }
         }
     }
 
+    /// <summary>
+    /// 드래그 시작때 불러지는 함수입니다.
+    /// </summary>
     public void OnBeginDrag(PointerEventData eventData)
     {
         if (isHaveItem)
@@ -52,14 +69,22 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         }
     }
 
+    /// <summary>
+    /// 드래그 중에 불러지는 함수입니다.
+    /// </summary>
     public void OnDrag(PointerEventData eventData)
     {
         if (isHaveItem)
         {
             transform.position = eventData.position;
+            transform.SetAsLastSibling();
         }
     }
 
+    /// <summary>
+    /// 드래그 종료 시 불러지는 함수입니다.
+    /// 드래그가 종료된 위치의 슬롯과 아이템을 교환합니다.
+    /// </summary>
     public void OnEndDrag(PointerEventData eventData)
     {
         if (isHaveItem)
@@ -74,13 +99,14 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
                 Slot otherSlot = result.gameObject.GetComponent<Slot>();
                 if (otherSlot != null && otherSlot != this)
                 {
-                    // 다른 슬롯에 아이템을 드롭합니다.
+                    // 다른 슬롯과 아이템을 교환합니다.
                     SwapItems(otherSlot);
                 }
             }
 
             transform.position = startPosition;
 
+            // 이 슬롯이 완성품일경우, 슬롯을 교환 후 제작대의 아이템을 삭제합니다.
             if(!isHaveItem && this.type == (int)SlotType.MANUFACTURED)
             {
                 table.RemoveCraftingSlots();
@@ -89,17 +115,12 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         isDrag = false;
     }
 
+    /// <summary>
+    /// 특정 슬롯에 아이템을 추가하는 함수입니다.
+    /// </summary>
     public void AddItem(Slot otherSlot, Item item)
     {
-        /*if (this.type == (int)SlotType.MANUFACTURED && !otherSlot.isHaveItem)
-        {
-            otherSlot.item = item;
-            otherSlot.isHaveItem = true;
-            otherSlot.UpdateItemImage();
-            RemoveItem(this);
-        }*/
-
-        if (!otherSlot.isHaveItem && otherSlot.type != (int)SlotType.MANUFACTURED/* && this.type != (int)SlotType.MANUFACTURED*/)
+        if (!otherSlot.isHaveItem && otherSlot.type != (int)SlotType.MANUFACTURED)
         {
             otherSlot.item = item;
             otherSlot.isHaveItem = true;
@@ -107,6 +128,9 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         }
     }
 
+    /// <summary>
+    /// 이 슬롯에 아이템을 추가하는 함수입니다.
+    /// </summary>
     public void AddItem(Item item)
     {
         if (!isHaveItem)
@@ -117,6 +141,9 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         }
     }
 
+    /// <summary>
+    /// 이 슬롯의 아이템을 삭제하는 함수입니다.
+    /// </summary>
     public void RemoveItem(Slot slot)
     {
         if (isHaveItem)
@@ -127,7 +154,9 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         }
     }
 
-
+    /// <summary>
+    /// 다른 슬롯과 아이템을 교환하는 함수입니다.
+    /// </summary>
     void SwapItems(Slot otherSlot)
     {
         if (otherSlot.type != (int)SlotType.MANUFACTURED)
@@ -159,8 +188,12 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         isHaveItem = false;
     }
 
+    /// <summary>
+    /// 슬롯의 이미지를 업데이트하는 함수입니다.
+    /// </summary>
     public void UpdateItemImage()
     {
+        //아이템을 갖고 있을 때 아이템이미지를 내보냅니다.
         if (isHaveItem)
         {
             Sprite newImage = Resources.Load<Sprite>(item.imageName);
@@ -177,21 +210,29 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
                 Debug.LogError("이미지를 찾을 수 없습니다: " + item.name);
             }
         }
+        //아이템이 없을을 때 아이템이미지를 내보냅니다.
+        //현재는 Magenta를 출력합니다.
         else
         {
             image.sprite = null;
             Color tempColor = image.color;
             tempColor.a = 0.5f;
+            tempColor.r = 1f;
             tempColor.g = 0f;
+            tempColor.b = 1f;
             image.color = tempColor;
         }
 
+        // 제작대 슬롯이 업데이트 될 때 마다, 제작대를 확인합니다.
         if (this.type == (int)SlotType.CRAFT)
         {
             table.CheckCraftTable();
         }
     }
 
+    /// <summary>
+    /// 슬롯에 있는 아이템의 번호를 가져오는 함수입니다.
+    /// </summary>
     public int GetItemNo()
     {
         int num = 0;
@@ -202,4 +243,15 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         return num;
     }
 
+    /// <summary>
+    /// 슬롯을 우클릭 시 불러지는 함수입니다.
+    /// 드래그중이 아닐 때 우클릭시 슬롯에 있는 아이템을 삭제합니다.
+    /// </summary>
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right && !isDrag)
+        {
+            RemoveItem(this);
+        }
+    }
 }

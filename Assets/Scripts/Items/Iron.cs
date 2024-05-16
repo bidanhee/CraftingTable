@@ -4,9 +4,7 @@
 [System.Serializable]
 public class Iron : Item
 {
-    public Iron(string name, string imageName)
-        : base(name, imageName)
-    {
-        this.itemNo = (int)ItemNo.IRON;
-    }
+    public Iron(string name) : base(name) 
+    { this.itemNo = (int)ItemNo.IRON;
+        this.imageName = "Iron"; }
 }
