@@ -6,7 +6,7 @@ using UnityEngine;
 /// <summary>
 /// 제작대 UI에 있는 제작 및 인벤토리를 총괄하는 클래스입니다.
 /// </summary>
-public class CratftTableUI : MonoBehaviour
+public class InventoryUI : MonoBehaviour
 {
 
     /// <summary>
@@ -17,12 +17,14 @@ public class CratftTableUI : MonoBehaviour
     private const int INVENTORY_WIDTH = 9;
     private const int INVENTORY_HEIGHT = 4;
     private const int INVENTORY_SLOT_MAX = INVENTORY_WIDTH * INVENTORY_HEIGHT;
-    private const int CRAFTING_WIDTH = 3;
-    private const int CRAFTING_HEIGHT = 3;
+    private const int CRAFTING_WIDTH = 2;
+    private const int CRAFTING_HEIGHT = 2;
     private const int CRAFTING_SLOT_MAX = CRAFTING_WIDTH * CRAFTING_HEIGHT;
+    private const int EQUIPT_SLOT_MAX = 5;
 
     GameObject[] inventorySlot = new GameObject[INVENTORY_SLOT_MAX];        // 인벤토리 슬롯
     GameObject[] craftingSlot = new GameObject[CRAFTING_SLOT_MAX];     //제작대 슬롯
+    GameObject[] equiptSlot = new GameObject[EQUIPT_SLOT_MAX];
     GameObject manufacturedSlot;    //완성품 슬롯
 
     public List<Item> items = new List<Item>();     //UI에서 관리하는 아이템리스트들. //추후에 Player의 item리스트와 연결해야합니다.
@@ -48,12 +50,12 @@ public class CratftTableUI : MonoBehaviour
                 slot = inventorySlot[cnt].GetComponent<Slot>();
                 if (i == INVENTORY_HEIGHT - 1)
                 {
-                    inventorySlot[cnt].transform.position = new Vector2(518 + (j * 110), 485 - (i * 120 + 20));
+                    inventorySlot[cnt].transform.position = new Vector2(568 + (j * 98), 500 - (i * 100 + 18));
                     slot.type = (int)SlotType.QUICKSLOT;
                 }
                 else
                 {
-                    inventorySlot[cnt].transform.position = new Vector2(518 + (j * 110), 485 - (i * 120));
+                    inventorySlot[cnt].transform.position = new Vector2(568 + (j * 98), 500 - (i * 100));
                     slot.type = (int)SlotType.INVENTORY;
                 }
                 cnt++;
@@ -68,7 +70,7 @@ public class CratftTableUI : MonoBehaviour
             {
                 craftingSlot[cnt] = Instantiate(iSlot, transform);
                 craftingSlot[cnt].SetActive(true);
-                craftingSlot[cnt].transform.position = new Vector2(655 + (j * 110), 920 - (i * 120));
+                craftingSlot[cnt].transform.position = new Vector2(1050 + (j * 98), 850 - (i * 100));
                 slot = craftingSlot[cnt].GetComponent<Slot>();
                 slot.type = (int)SlotType.CRAFT;
                 cnt++;
@@ -79,12 +81,80 @@ public class CratftTableUI : MonoBehaviour
         //manufacturedSlot
         manufacturedSlot = Instantiate(iSlot, transform);
         manufacturedSlot.SetActive(true);
-        manufacturedSlot.transform.position = new Vector2(1230, 800);
+        manufacturedSlot.transform.position = new Vector2(1360, 790);
         slot = manufacturedSlot.GetComponent<Slot>();
         slot.type = (int)SlotType.MANUFACTURED;
 
+        cnt = 0;
+        for (int i = 0; i < EQUIPT_SLOT_MAX; i++)
+        {
+            equiptSlot[cnt] = Instantiate(iSlot, transform);
+            equiptSlot[cnt].SetActive(true);
+            if (i == (EQUIPT_SLOT_MAX - 1))
+            {
+                equiptSlot[cnt].transform.position = new Vector2(955, 915 - ((i-1) * 100));
+            }
+            else
+            {
+                equiptSlot[cnt].transform.position = new Vector2(570, 915 - (i * 100));
+            }
+            slot = equiptSlot[cnt].GetComponent<Slot>();
+            slot.type = (int)SlotType.EQUIPT;
+            cnt++;
+            slot.craftNum = cnt;
+        }
+
     }
 
+    /// <summary>
+    /// 아이템 리스트를 가져오는 함수입니다.
+    /// </summary>
+    public List<Item> getItemList()
+    {
+        List<Item> itemInUI = new List<Item>();
+        Slot slot = null;
+        for (int i = 0; i < CRAFTING_SLOT_MAX; i++)
+        {
+            slot = craftingSlot[i].GetComponent<Slot>();
+            if (slot.isHaveItem)
+            {
+                itemInUI.Add(slot.item);
+            }
+        }
+
+        for (int i = 0; i < INVENTORY_SLOT_MAX; i++)
+        {
+            slot = inventorySlot[i].GetComponent<Slot>();
+            if (slot.isHaveItem)
+            {
+                itemInUI.Add(slot.item);
+            }
+        }
+        slot = manufacturedSlot.GetComponent<Slot>();
+        if (slot.isHaveItem)
+        {
+            itemInUI.Add(slot.item);
+        }
+
+        return itemInUI;
+    }
+
+    /// <summary>
+    /// 장착한 아이템 리스트를 가져오는 함수입니다.
+    /// </summary>
+    public List<Item> getEquiptedItemList() 
+    {
+        List<Item> itemInUI = new List<Item>();
+        Slot slot = null;
+        for (int i = 0; i < EQUIPT_SLOT_MAX; i++)
+        {
+            slot = null;
+            slot = equiptSlot[i].GetComponent<Slot>();
+            if(slot.isHaveItem) itemInUI.Add(slot.item);
+            else itemInUI.Add(null);
+        }
+        return itemInUI;
+    }
     /// <summary>
     /// 슬롯에 아이템을 넣는 함수 입니다. 슬롯에 순서대로 넣어집니다.
     /// </summary>
@@ -109,34 +179,22 @@ public class CratftTableUI : MonoBehaviour
             }
         }
     }
-
-    public List<Item> getItemList()
+    /// <summary>
+    /// 장착된 아이템들을 슬롯에 넣는 함수입니다.
+    /// </summary>
+    public void AddEquiptedToSlot(List<Item> eItems)
     {
-        List<Item> itemInUI = new List<Item>();
-        Slot slot = null;
-        for (int i = 0; i < CRAFTING_SLOT_MAX; i++)
-        {
-            slot = craftingSlot[i].GetComponent<Slot>();
-            if (slot.isHaveItem)
-            {
-                itemInUI.Add(slot.item);
-            }
-        }
-        for (int i = 0; i < INVENTORY_SLOT_MAX; i++)
-        {
-            slot = inventorySlot[i].GetComponent<Slot>();
-            if (slot.isHaveItem)
-            {
-                itemInUI.Add(slot.item);
-            }
-        }
-        slot = manufacturedSlot.GetComponent<Slot>();
-        if (slot.isHaveItem)
-        {
-            itemInUI.Add(slot.item);
-        }
 
-        return itemInUI;
+        for (int i = 0; i < EQUIPT_SLOT_MAX; i++)
+        {
+            Slot itemSlot = equiptSlot[i].GetComponent<Slot>();
+            if (eItems[i] != null)
+            {
+                itemSlot.item = eItems[i];
+                itemSlot.isHaveItem = true;
+                itemSlot.UpdateItemImage();
+            }
+        }
     }
 
 
@@ -181,61 +239,6 @@ public class CratftTableUI : MonoBehaviour
     /// </summary>
     public Item CheckCraftingItems(int[] itemInCraft)
     {
-        // 디버그용
-        Debug.Log(string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}",
-            itemInCraft[0], itemInCraft[1], itemInCraft[2], itemInCraft[3],
-            itemInCraft[4], itemInCraft[5], itemInCraft[6], itemInCraft[7], itemInCraft[8]));
-
-        /////
-        
-        int[] craftPickaxe =
-            {
-            (int)ItemNo.IRON, (int)ItemNo.IRON, (int)ItemNo.IRON,
-            (int)ItemNo.NONE, (int)ItemNo.STICK, (int)ItemNo.NONE,
-            (int)ItemNo.NONE,(int)ItemNo.STICK, (int)ItemNo.NONE
-            };
-
-        int[] craftAxe =
-        {
-            (int)ItemNo.IRON, (int)ItemNo.IRON, (int)ItemNo.NONE,
-            (int)ItemNo.IRON, (int)ItemNo.STICK, (int)ItemNo.NONE,
-            (int)ItemNo.NONE,(int)ItemNo.STICK, (int)ItemNo.NONE
-        };
-
-        int[] craftSword =
-        {
-            (int)ItemNo.NONE, (int)ItemNo.IRON, (int)ItemNo.NONE,
-            (int)ItemNo.NONE, (int)ItemNo.IRON, (int)ItemNo.NONE,
-            (int)ItemNo.NONE,(int)ItemNo.STICK, (int)ItemNo.NONE
-        };
-
-        int[] craftShovel =
-        {
-            (int)ItemNo.NONE, (int)ItemNo.IRON, (int)ItemNo.NONE,
-            (int)ItemNo.NONE, (int)ItemNo.STICK, (int)ItemNo.NONE,
-            (int)ItemNo.NONE,(int)ItemNo.STICK, (int)ItemNo.NONE
-        };
-
-        int[] craftHoe =
-        {
-            (int)ItemNo.IRON, (int)ItemNo.IRON, (int)ItemNo.NONE,
-            (int)ItemNo.NONE, (int)ItemNo.STICK, (int)ItemNo.NONE,
-            (int)ItemNo.NONE,(int)ItemNo.STICK, (int)ItemNo.NONE
-        };
-
-        int[] craftBow =
-        {
-            (int)ItemNo.NONE, (int)ItemNo.STICK, (int)ItemNo.STRING,
-            (int)ItemNo.STICK, (int)ItemNo.NONE, (int)ItemNo.STRING,
-            (int)ItemNo.NONE,(int)ItemNo.STICK, (int)ItemNo.STRING
-        };
-
-        int[] craftFishingRod =
-        {
-            (int)ItemNo.NONE, (int)ItemNo.NONE, (int)ItemNo.STICK,
-            (int)ItemNo.NONE, (int)ItemNo.STICK, (int)ItemNo.STRING,
-            (int)ItemNo.STICK,(int)ItemNo.NONE, (int)ItemNo.STRING
-        };
 
         int[] craftCarrotFishingRod =
         {
@@ -244,42 +247,7 @@ public class CratftTableUI : MonoBehaviour
         
         //////
 
-        if (itemInCraft.SequenceEqual(craftPickaxe))
-        {
-            Pickaxe pickaxe = new Pickaxe("곡괭이");
-            return pickaxe;
-        }
-        else if(itemInCraft.SequenceEqual(craftAxe))
-        {
-            Axe axe = new Axe("도끼");
-            return axe;
-        }
-        else if (itemInCraft.SequenceEqual(craftSword))
-        {
-            Sword sword = new Sword("검");
-            return sword;
-        }
-        else if (itemInCraft.SequenceEqual(craftShovel))
-        {
-            Shovel shovel = new Shovel("삽");
-            return shovel;
-        }
-        else if (itemInCraft.SequenceEqual(craftBow))
-        {
-            Bow bow = new Bow("활");
-            return bow;
-        }
-        else if (itemInCraft.SequenceEqual(craftHoe))
-        {
-            Hoe hoe = new Hoe("괭이");
-            return hoe;
-        }
-        else if (itemInCraft.SequenceEqual(craftFishingRod))
-        {
-            FishingRod rod = new FishingRod("낚싯대");
-            return rod;
-        }
-        else if (craftCarrotFishingRod.All(item => itemInCraft.Contains(item)))
+        if (craftCarrotFishingRod.All(item => itemInCraft.Contains(item)))
         {
             CarrotFishingRod rod = new CarrotFishingRod("당근낚싯대");
             return rod;

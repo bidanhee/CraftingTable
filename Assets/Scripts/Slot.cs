@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -6,14 +7,16 @@ using UnityEngine.UI;
 /// <summary>
 /// 슬롯마다 부여되는 슬롯의 타입들입니다.
 /// </summary>
-enum SlotType { ERROR, QUICKSLOT, INVENTORY, CRAFT, MANUFACTURED};
+enum SlotType { ERROR, QUICKSLOT, INVENTORY, CRAFT, MANUFACTURED, EQUIPT};
 
 /// <summary>
 /// 슬롯 클래스 입니다.
 /// </summary>
-public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler
+public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
 {
-    CratftTableUI table;    
+    CratftTableUI cTable = null;    // 제작대
+    InventoryUI iTable = null;    // 인벤토리
+
     public Item item = null;    //슬롯이 보유하고 있는 아이템입니다.
     public Image image;     //아이템이 없으면 빈 이미지, 아이템이 있으면 아이템이미지가 들어갑니다.
 
@@ -23,10 +26,16 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
     public int craftNum;    // 제작대 슬롯에만 부여되는 번호입니다. 제작대 슬롯이 아닐 시 0입니다.
     public bool isDrag; //드래그 중인가?
 
+    public GameObject tooltip;  //툴팁
+    public TextMeshProUGUI tooltipText; //툴팁텍스트
 
     void Update()
     {
         RButtonDownOnDrag();
+        if(isDrag && tooltip.activeSelf)
+        {
+            tooltip.SetActive(false);   //툴팁 OFF
+        }
     }
 
     /// <summary>
@@ -109,7 +118,8 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
             // 이 슬롯이 완성품일경우, 슬롯을 교환 후 제작대의 아이템을 삭제합니다.
             if(!isHaveItem && this.type == (int)SlotType.MANUFACTURED)
             {
-                table.RemoveCraftingSlots();
+                if (cTable) cTable.RemoveCraftingSlots();
+                else if (iTable) iTable.RemoveCraftingSlots();
             }
         }
         isDrag = false;
@@ -184,7 +194,15 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
     void Awake()
     {
         image = GetComponent<Image>();
-        table = GetComponentInParent<CratftTableUI>();
+        
+        cTable = GetComponentInParent<CratftTableUI>();
+        iTable = GetComponentInParent<InventoryUI>();
+
+
+        tooltip = transform.Find("tooltip").gameObject;
+        tooltipText = GetComponentInChildren<TextMeshProUGUI>();
+        tooltip.SetActive(false);
+
         isHaveItem = false;
         UpdateItemImage();
     }
@@ -227,7 +245,8 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         // 제작대 슬롯이 업데이트 될 때 마다, 제작대를 확인합니다.
         if (this.type == (int)SlotType.CRAFT)
         {
-            table.CheckCraftTable();
+            if (cTable) cTable.CheckCraftTable();
+            else if (iTable) iTable.CheckCraftTable();
         }
     }
 
@@ -254,5 +273,21 @@ public class Slot : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHand
         {
             RemoveItem(this);
         }
+    }
+
+    //툴팁
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if(isHaveItem && !isDrag)
+        {
+            tooltip.SetActive(true);    //툴팁 ON
+            tooltipText = GetComponentInChildren<TextMeshProUGUI>();
+            tooltipText.text = "ITEM : " + item.imageName;
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        tooltip.SetActive(false);   //툴팁 OFF
     }
 }

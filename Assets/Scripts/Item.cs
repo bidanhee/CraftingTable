@@ -11,6 +11,7 @@ public class Item
     public string imageName;
     /// <summary> 아이템마다 부여되는 고유번호입니다. (int)ItemNo 를 추가하여 이용하면 됩니다.</summary>
     public int itemNo;
+
     public Item(string name)
     {
         this.name = name;
